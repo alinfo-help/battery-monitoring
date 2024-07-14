@@ -1,0 +1,11 @@
+6.5 7.5 - green
+else - red
+
+
+2. save to pdf - all data
+
+3. battery name in settings 
+
+4. try to create the execl file in diffrent files 
+
+
