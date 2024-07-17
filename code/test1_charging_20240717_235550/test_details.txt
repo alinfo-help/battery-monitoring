@@ -1,0 +1,6 @@
+Test Name: test1
+Test Type: charging
+Test Duration: 10 minutes
+Log Date: 2024-07-17
+Bench Number: 4
+COM Port: 
