@@ -1,0 +1,7 @@
+[DEFAULT]
+dbname=BMS
+user=postgres
+password=raza
+host=localhost
+port=5432
+csv_file_path=C:\Users\PalakBhagat\Desktop\Battery_1\battery-monitoring\app\config\bank_config.csv

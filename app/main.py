@@ -1,9 +1,9 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from ui import App
+from ui import BatteryMonitoringSystem
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = App()
-    ex.show()
+    window = BatteryMonitoringSystem()
+    window.show()
     sys.exit(app.exec_())

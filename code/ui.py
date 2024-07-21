@@ -22,7 +22,7 @@ class App(QMainWindow):
         self.recording_timer = QTimer()
         self.elapsed_time = 0
         self.recording_csv_file = None
-        self.last_recording_timestamp = None  # Track last timestamp written to recording CSV
+        self.last_recording_timestamp = None  
         self.initUI()
 
     def initUI(self):
