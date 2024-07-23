@@ -1,3 +1,43 @@
+QFrame#top_bar {
+    background-color: #1E3D58;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+QFrame#left_menu {
+    background-color: #1E3D58;
+    color: white;
+    font-size: 16px;
+}
+
+QFrame#bottom_bar {
+    background-color: #1E3D58;
+    color: white;
+    font-size: 14px;
+}
+QLabel {
+    color: white;
+    font-size: 18px;
+    border: none;
+}
+
+QPushButton {
+    background-color: #1E3D58;
+    color: white;
+    border: none;
+    font-size: 16px;
+}
+
+QPushButton:hover {
+    background-color: #3A6B8A;
+}
+
+QComboBox {
+    background-color: #1E3D58;
+    color: white;
+}
+
 QMainWindow {
     background-color: #ffffff;
 }
