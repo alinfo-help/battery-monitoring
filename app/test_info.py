@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QLineEdit, QDialogButtonBox, QLabel,
-    QComboBox, QDateEdit, QSpinBox, QGroupBox, QHBoxLayout, QFormLayout
+    QComboBox, QDateEdit, QSpinBox, QGroupBox, QHBoxLayout, QFormLayout, QDoubleSpinBox
 )
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtGui import QFont
@@ -25,9 +25,16 @@ class TestInfoDialog(QDialog):
         self.type_combo.addItems(["Charging", "Discharging"])
         test_info_layout.addRow(QLabel("Select Type:"), self.type_combo)
 
-        self.test_duration_spin = QSpinBox(self)
-        self.test_duration_spin.setRange(1, 9999)
+        # self.test_duration_spin = QSpinBox(self)
+        # self.test_duration_spin.setRange(1, 9999)
+        # test_info_layout.addRow(QLabel("Test Duration (hrs):"), self.test_duration_spin)
+
+        self.test_duration_spin = QDoubleSpinBox(self)
+        self.test_duration_spin.setRange(0.5, 9999) 
+        self.test_duration_spin.setDecimals(1) 
+        self.test_duration_spin.setSingleStep(0.5)
         test_info_layout.addRow(QLabel("Test Duration (hrs):"), self.test_duration_spin)
+
 
         self.log_date_edit = QDateEdit(self)
         self.log_date_edit.setDate(QDate.currentDate())
@@ -63,14 +70,16 @@ class TestInfoDialog(QDialog):
                 font-family: Arial;
                 font-size: 10pt;
                 padding: 5px;
+                color: #000;
             }
-            QLineEdit, QComboBox, QSpinBox, QDateEdit {
+            QLineEdit, QComboBox, QDoubleSpinBox, QDateEdit {
                 font-family: Arial;
                 font-size: 10pt;
                 padding: 5px;
                 border: 1px solid #ccc;
                 border-radius: 5px;
                 background-color: #fff;
+                color: #000;           
             }
             QGroupBox {
                 font-family: Arial;
@@ -80,6 +89,7 @@ class TestInfoDialog(QDialog):
                 border: 1px solid #ccc;
                 border-radius: 5px;
                 margin-top: 10px;
+                color: #000;
             }
             QDialogButtonBox {
                 background-color: #f0f0f0;

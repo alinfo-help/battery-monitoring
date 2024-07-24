@@ -523,6 +523,7 @@ class BatteryMonitoringSystem(QMainWindow):
         main_layout.addWidget(bottom_bar)
 
         self.load_banks()
+        self.add_additional_buttons()
 
         # Timer for real-time clock
         self.clock_timer = QTimer(self)
@@ -541,9 +542,26 @@ class BatteryMonitoringSystem(QMainWindow):
         cur.close()
         conn.close()
 
+        # Add a label for the new section
+        section_label = QLabel("Avaliable Banks", self)
+        section_label.setStyleSheet("font-size: 14px; font-weight: bold; margin-top: 20px; color: white;")
+        self.left_menu_layout.addWidget(section_label)
+
         for bank in banks:
             button = QPushButton(bank[1], self)
-            button.setStyleSheet("background-color: #1E3D58; color: white; border: none; font-size: 16px;padding:5px;")
+            button.setStyleSheet("""
+                                        QPushButton {
+                                        background-color: #1E3D58;
+                                        color: white;
+                                        border: none;
+                                        font-size: 16px;
+                                        padding: 5px;
+                                    }
+                                    QPushButton:hover {
+                                        background-color: #50B498;
+                                        color: black;
+                                    }
+                                """)
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             button.setFixedHeight(40)
             button.clicked.connect(lambda _, bank_id=bank[0], btn=button: self.on_menu_button_click(bank_id, btn))
@@ -552,7 +570,20 @@ class BatteryMonitoringSystem(QMainWindow):
     def on_menu_button_click(self, bank_id, button):
         self.current_bank_id = bank_id
         if self.prev_button:
-            self.prev_button.setStyleSheet("background-color: #1E3D58; color: white; border: none; font-size: 16px; padding: 5px;")
+            # self.prev_button.setStyleSheet("background-color: #1E3D58; color: white; border: none; font-size: 16px; padding: 5px;")
+            self.prev_button.setStyleSheet("""
+                                        QPushButton {
+                                        background-color: #1E3D58;
+                                        color: white;
+                                        border: none;
+                                        font-size: 16px;
+                                        padding: 5px;
+                                    }
+                                    QPushButton:hover {
+                                        background-color: #50B498;
+                                        color: black;
+                                    }
+                                """)
         
         button.setStyleSheet("background-color: #50B498; color: black; border: none; font-size: 16px; padding: 5px;")
         self.prev_button = button
@@ -660,6 +691,53 @@ class BatteryMonitoringSystem(QMainWindow):
     def stop_recording(self):
         pass
 
+    def add_additional_buttons(self):
+        # Add a label for the new section
+        section_label = QLabel("Menu", self)
+        section_label.setStyleSheet("font-size: 14px; font-weight: bold; margin-top: 20px; color: white;")
+        self.left_menu_layout.addWidget(section_label)        
+        # Add the additional buttons
+        # options = ["Graph", "Reports", "Test History", "About"]
+        options = ["Graph", "Reports",  "About"]
+        for option in options:
+            button = QPushButton(option, self)
+            button.setStyleSheet("""
+                                        QPushButton {
+                                        background-color: #1E3D58;
+                                        color: white;
+                                        border: none;
+                                        font-size: 16px;
+                                        padding: 5px;
+                                    }
+                                    QPushButton:hover {
+                                        background-color: #50B498;
+                                        color: black;
+                                    }
+                                """)
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            button.setFixedHeight(40)
+            # Connect buttons to appropriate slots or methods
+            if option == "Graph":
+                button.clicked.connect(self.show_graph)
+            elif option == "Reports":
+                button.clicked.connect(self.show_reports)
+            # elif option == "Test History":
+            #     button.clicked.connect(self.show_test_history)
+            elif option == "About":
+                button.clicked.connect(self.show_about)
+            self.left_menu_layout.addWidget(button)
+
+    def show_graph(self):
+        pass  # Add logic to show graph
+
+    def show_reports(self):
+        pass  # Add logic to show reports
+
+    # def show_test_history(self):
+    #     pass  # Add logic to show test history
+
+    def show_about(self):
+        pass  # Add logic to show about
     def apply_styles(self):
         with open("./styles/styles.qss", 'r') as file:
             self.setStyleSheet(file.read())
