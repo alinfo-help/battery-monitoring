@@ -38,7 +38,7 @@ def get_all_banks():
     conn.close()
     return banks
 
-def insert_battery(bank_id, battery_number, serial_number=""):
+def insert_battery(bank_id, battery_number, serial_number):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -56,9 +56,11 @@ def insert_batteries_for_all_banks():
     for bank in banks:
         bank_id = bank['id']
         number_of_cells = bank['number_of_cells']
+        bank_name = bank['name']
         for battery_number in range(1, number_of_cells + 1):
-            insert_battery(bank_id, battery_number)
+            serial_number = f"{bank_name}.B{battery_number}"
+            insert_battery(bank_id, battery_number,serial_number)
 
 
 # insert_banks_from_csv()
-# insert_batteries_for_all_banks()
+insert_batteries_for_all_banks()

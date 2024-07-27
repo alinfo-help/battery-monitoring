@@ -387,7 +387,7 @@
 #     window = BatteryMonitoringSystem()
 #     window.show()
 #     sys.exit(app.exec_())
-##########################################################################
+#########################################################################
 import csv
 import os
 import sys
@@ -396,6 +396,7 @@ from PyQt5.QtCore import QTimer, Qt, QDateTime, QDate
 from db_code.db_client import get_connection
 from settings import SettingsDialog
 from test_info import TestInfoDialog
+from datetime import datetime
 from report import generate_pdf_report
 
 class BatteryMonitoringSystem(QMainWindow):
@@ -637,10 +638,11 @@ class BatteryMonitoringSystem(QMainWindow):
                 temp = float(latest_row.get(f"Temperature", 0))
                 color = "#4E9F3D" if voltage > 6.5 else "#ED2B2A"
                 serial_number = self.serial_numbers[i]
-                text = f'Battery {i+1}: {voltage} V'
+                text = f'Battery {i+1}: {serial_number} '
+                text += f"\nVoltage: {voltage} V"
                 text += f'\nTemp.: {temp} C'
-                if serial_number:
-                    text += f'\nSerial: {serial_number}'
+                # if serial_number:
+                #     text += f'\nSerial: {serial_number}'
                 label.setStyleSheet(f"background-color: {color}; color: white; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
                 label.setText(text)
 
@@ -683,10 +685,20 @@ class BatteryMonitoringSystem(QMainWindow):
         conn.close()
 
     def open_test_info_dialog(self):
-        dialog = TestInfoDialog(self)
-        if dialog.exec_():
-            self.test_details = dialog.get_test_details()
-            self.start_recording()
+        if(self.current_bank_id):
+            dialog = TestInfoDialog(self)
+            if dialog.exec_():
+                self.test_details = dialog.get_test_details()
+                self.start_recording()
+
+    def start_recording(self):
+        print("recording started")
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO recorded_data(test_run_id   )
+                    """)
+        pass
 
     def stop_recording(self):
         pass
@@ -738,9 +750,8 @@ class BatteryMonitoringSystem(QMainWindow):
 
     def show_about(self):
         pass  # Add logic to show about
+
     def apply_styles(self):
         with open("./styles/styles.qss", 'r') as file:
             self.setStyleSheet(file.read())
-
-
 
