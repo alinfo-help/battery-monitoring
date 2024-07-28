@@ -3,6 +3,7 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QGridLayout, QWidget, QLabel, QHBoxLayout, QPushButton, QFrame, QSizePolicy, QScrollArea
 from PyQt5.QtCore import QTimer, Qt, QDateTime, QDate ,QTime
+from PyQt5.QtGui import QPixmap, QPainter, QColor
 from db_code.db_client import get_connection
 from settings import SettingsDialog
 from test_info import TestInfoDialog
@@ -31,6 +32,9 @@ class BatteryMonitoringSystem(QMainWindow):
         #counter for bottom logging data 
         self.data_log_counter = 0
         
+        #flag for recording lable 
+        self.is_recording = False
+        
     def init_ui(self):
         self.setWindowTitle("Battery Management System V - 1.0.0")
         self.showMaximized()
@@ -51,18 +55,27 @@ class BatteryMonitoringSystem(QMainWindow):
         top_bar_layout.setContentsMargins(10, 0, 10, 0)
         top_bar_layout.setSpacing(0)
 
-         # Create the counter label
-        self.counter_label = QLabel(self)
-        self.counter_label.setAlignment(Qt.AlignCenter)
-        self.counter_label.setStyleSheet("color: white; font-size: 16px;")
-        top_bar_layout.addWidget(self.counter_label)
-
         # Left-aligned layout
         left_layout = QHBoxLayout()
         left_layout.setAlignment(Qt.AlignLeft)
         top_bar_label = QLabel("Battery Management System V - 1.0.0", self)
         top_bar_label.setStyleSheet("font-size: 12px; font-weight: bold;")
         left_layout.addWidget(top_bar_label)
+
+        # Center-aligned layout for recording status and remaining time
+        center_layout = QVBoxLayout()
+        center_layout.setAlignment(Qt.AlignCenter)
+        
+        # Create the recording status label
+        self.recording_status_label = QLabel("Not Recording")
+        self.recording_status_label.setStyleSheet("color: red; font-weight: bold;")
+        center_layout.addWidget(self.recording_status_label)
+
+        # Create the counter label for remaining time
+        self.counter_label = QLabel(self)
+        self.counter_label.setAlignment(Qt.AlignCenter)
+        self.counter_label.setStyleSheet("color: white; font-size: 16px;")
+        center_layout.addWidget(self.counter_label)
 
         # Right-aligned layout
         right_layout = QVBoxLayout()
@@ -74,13 +87,12 @@ class BatteryMonitoringSystem(QMainWindow):
         right_layout.addWidget(date)
         right_layout.addWidget(self.clock)
 
-        # Add left and right layouts to the top bar layout
+        # Add left, center, and right layouts to the top bar layout
         top_bar_layout.addLayout(left_layout)
         top_bar_layout.addStretch()
+        top_bar_layout.addLayout(center_layout)
+        top_bar_layout.addStretch()
         top_bar_layout.addLayout(right_layout)
-
-        
-
 
         main_layout.addWidget(top_bar)
 
@@ -131,7 +143,6 @@ class BatteryMonitoringSystem(QMainWindow):
 
         self.labels = []  # To store QLabel references
         self.serial_numbers = []
-        # self.data_log_counter = 0
         main_content.addWidget(central_area)
 
         # Create bottom bar
@@ -147,6 +158,14 @@ class BatteryMonitoringSystem(QMainWindow):
         self.bottom_bar_data_points = QLabel("Data points logged: 0", self)
         self.bottom_bar_data_points.setStyleSheet("font-size: 14px; margin-left: 20px;")
         bottom_bar_layout.addWidget(self.bottom_bar_data_points)
+        
+        # Timer Label
+        self.timer_label = QLabel("Next data log in: 15:00")
+        bottom_bar_layout.addWidget(self.timer_label)
+         # Initialize Timer
+        self.time_remaining = QTime(0, 15, 0)
+        self.update_timer_label()
+
         main_layout.addWidget(bottom_bar)
 
         self.load_banks()
@@ -247,29 +266,44 @@ class BatteryMonitoringSystem(QMainWindow):
             self.labels = []
             self.serial_numbers = self.fetch_serial_numbers(bank_id)
 
+            # Add QLabel for total voltage and current at the top
+            self.total_voltage_label = QLabel('Total Voltage: 0 V\t\tTotal Current: 0 A')
+            self.grid_layout.addWidget(self.total_voltage_label, 0, 0, 1, 4)
+            self.total_voltage_label.setStyleSheet("background-color: #50B498; color: #000; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
+
             for i in range(number_of_cells):
                 label = QLabel(f'Battery {i+1}')
-                self.grid_layout.addWidget(label, i // 4, i % 4)
+                self.grid_layout.addWidget(label, (i // 4) + 1, i % 4)  # Adjust the row and column index
                 self.labels.append(label)
-                # self.serial_numbers.append()  # Initialize with empty serial numbers or load from DB
 
             self.update_data()
 
     def update_data(self):
-        latest_row = self.read_latest_data('../data/battery_data.csv')
-        if latest_row:
-            for i, label in enumerate(self.labels):
-                voltage = float(latest_row.get(f"Bank1.B{i+1}", 0))  # Default to 0 if key not found
-                temp = float(latest_row.get(f"Temperature", 0))
-                color = "#4E9F3D" if voltage > 6.5 else "#ED2B2A"
-                serial_number = self.serial_numbers[i]
-                text = f'Battery {i+1}: {serial_number} '
-                text += f"\nVoltage: {voltage} V"
-                text += f'\nTemp.: {temp} C'
-                # if serial_number:
-                #     text += f'\nSerial: {serial_number}'
-                label.setStyleSheet(f"background-color: {color}; color: white; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
-                label.setText(text)
+        if(self.current_bank_id):
+            latest_row = self.read_latest_data('../data/battery_data.csv')
+            if latest_row:
+                total_voltage = 0
+                total_current = 0
+
+                for i, label in enumerate(self.labels):
+                    voltage = float(latest_row.get(f"Bank1.B{i+1}", 0))  # Default to 0 if key not found
+                    total_voltage += voltage
+                    temp = float(latest_row.get(f"Temperature", 0))
+                    current = float(latest_row.get(f"Current", 0))  # Assuming current data is available in CSV
+                    # total_current += current
+
+                    color = "#4E9F3D" if voltage > 6.5 else "#ED2B2A"
+                    serial_number = self.serial_numbers[i]
+                    text = f'Battery {i+1}: {serial_number} '
+                    text += f"\nVoltage: {voltage} V"
+                    text += f'\nTemp.: {temp} C'
+                    # if serial_number:
+                    #     text += f'\nSerial: {serial_number}'
+                    label.setStyleSheet(f"background-color: {color}; color: white; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
+                    label.setText(text)
+
+                # Update total voltage and current
+                self.total_voltage_label.setText(f'Total Voltage: {total_voltage} V\t\tTotal Current: {current} A')
 
     def read_latest_data(self, csv_file_path):
         if not os.path.isfile(csv_file_path):
@@ -318,6 +352,9 @@ class BatteryMonitoringSystem(QMainWindow):
 
     def start_test_recording(self, test_run_id, test_duration):
         print("Recording started")
+        if not self.is_recording:
+            self.is_recording = True
+            self.update_recording_status()
         # Set the remaining time to the test duration
         self.remaining_time = test_duration * 60 * 60 # Convert minutes to seconds
         
@@ -368,6 +405,9 @@ class BatteryMonitoringSystem(QMainWindow):
         if datetime.now() >= self.test_end_time:
             self.timer.stop()
             self.update_test_run('completed')
+            if self.is_recording:
+                self.is_recording = False
+                self.update_recording_status()
             print("Test recording completed")
             return
 
@@ -389,11 +429,15 @@ class BatteryMonitoringSystem(QMainWindow):
                 self.update_data_log_count(self.data_log_counter)
                 print("Data recorded at", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  
 
+    #TODO: counter and recoding lable stoped but recoding is still goin no no added logic to stop actual recoding 
     def stop_recording(self):
         if self.recording_timer:
             self.recording_timer.stop()
         if self.counter_timer:
             self.counter_timer.stop()
+        if self.is_recording:
+            self.is_recording = False
+            self.update_recording_status()
         
         # Fetch the start time from the database if not present in test_details
         if 'start_time' not in self.test_details:
@@ -413,6 +457,15 @@ class BatteryMonitoringSystem(QMainWindow):
         cur.close()
         conn.close()
         return start_time
+
+    #method for recoding lable logic 
+    def update_recording_status(self):
+        if self.is_recording:
+            self.recording_status_label.setText("Recording...")
+            self.recording_status_label.setStyleSheet("color: green; font-weight: bold;")
+        else:
+            self.recording_status_label.setText("Not Recording")
+            self.recording_status_label.setStyleSheet("color: red; font-weight: bold;")
 
     #Method for updating the counter of data logging
     def update_data_log_count(self, count):
@@ -453,6 +506,20 @@ class BatteryMonitoringSystem(QMainWindow):
             elif option == "About":
                 button.clicked.connect(self.show_about)
             self.left_menu_layout.addWidget(button)
+
+    def update_timer(self):
+        self.time_remaining = self.time_remaining.addSecs(-1)
+        self.update_timer_label()
+        
+        if self.time_remaining == QTime(0, 0, 0):
+            self.log_data()
+            self.reset_timer()
+
+    def update_timer_label(self):
+        self.timer_label.setText(f"Next data log in: {self.time_remaining.toString('mm:ss')}")
+    
+    def reset_timer(self):
+        self.time_remaining = QTime(0, 15, 0)
 
     def show_graph(self):
         pass  # Add logic to show graph
