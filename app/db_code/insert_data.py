@@ -62,5 +62,5 @@ def insert_batteries_for_all_banks():
             insert_battery(bank_id, battery_number,serial_number)
 
 
-# insert_banks_from_csv()
+insert_banks_from_csv()
 insert_batteries_for_all_banks()

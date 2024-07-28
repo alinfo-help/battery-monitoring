@@ -1,6 +1,8 @@
 from db_client import get_connection
+from db_config import read_config
+import csv
 
-def create_tables():
+def create_tables() :
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -45,10 +47,40 @@ def create_tables():
             UNIQUE(test_id, run_num)
         );
 
-        CREATE TABLE IF NOT EXISTS recorded_data (
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+        # CREATE TABLE IF NOT EXISTS recorded_data (
+        #     id SERIAL PRIMARY KEY,
+        #     test_run_id INTEGER NOT NULL REFERENCES test_runs(id),
+        #     battery_id INTEGER NOT NULL REFERENCES batteries(id),
+        #     voltage DECIMAL(10, 2) NOT NULL,
+        #     current DECIMAL(10, 2) NOT NULL,
+        #     temperature DECIMAL(10, 2) NOT NULL,
+        #     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        # );
+
+def create_recording_table() :
+    db_config = read_config()
+    csv_file_path = db_config['csv_file_path']
+    with open(csv_file_path, 'r') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        i=1
+        for row in csvreader:
+            name = row['name']
+            create_recorded_data_table(f"{i}")
+            i+=1
+
+def create_recorded_data_table(bank_name):
+    conn = get_connection()
+    cur = conn.cursor()
+    table_name = f"recorded_data_{bank_name.lower().replace(' ', '_')}"
+    cur.execute(f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
             id SERIAL PRIMARY KEY,
             test_run_id INTEGER NOT NULL REFERENCES test_runs(id),
-            battery_id INTEGER NOT NULL REFERENCES batteries(id),
+            battery_number INTEGER NOT NULL,
             voltage DECIMAL(10, 2) NOT NULL,
             current DECIMAL(10, 2) NOT NULL,
             temperature DECIMAL(10, 2) NOT NULL,
@@ -59,5 +91,7 @@ def create_tables():
     cur.close()
     conn.close()
 
+
 # Call the function to create the tables
 create_tables()
+create_recording_table()

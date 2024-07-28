@@ -689,15 +689,17 @@ class BatteryMonitoringSystem(QMainWindow):
             dialog = TestInfoDialog(self)
             if dialog.exec_():
                 self.test_details = dialog.get_test_details()
-                self.start_recording()
+                # self.start_recording()
 
-    def start_recording(self):
+    def start_test_recording(self,test_run_id,test_duration):
         print("recording started")
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO recorded_data(test_run_id   )
-                    """)
+        if(self.current_bank_id):
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO recorded_data_{self.current_bank_id}(test_run_id, battery_number, voltage, current, temperature)
+                VALUES(%s, %s, %s, %s, %s)
+                        """)
         pass
 
     def stop_recording(self):

@@ -266,4 +266,4 @@ class TestInfoDialog(QDialog):
         cur.close()
         conn.close()
         self.accept()
-        # self.parent().start_test_recording(test_run_id, test_details["test_duration"])
+        self.parent().start_test_recording(test_run_id, test_details["test_duration"])

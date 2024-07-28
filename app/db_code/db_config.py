@@ -1,6 +1,6 @@
 import configparser
 
-def read_config(file_path="C:\\Users\\Unicon\\Desktop\\Battery\\battery-monitoring\\app\\config\\config.txt"):
+def read_config(file_path="C:\\Users\\PalakBhagat\\Desktop\\Battery\\battery-monitoring\\app\\config\\config.txt"):
     config = configparser.ConfigParser()
     config.read(file_path)
     db_config = {
