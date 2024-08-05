@@ -67,41 +67,40 @@ QComboBox {
 }
 
 QMainWindow {
-                background-color: #ffffff;
-            }
+    background-color: #ffffff;
+}
 
-            QLabel {
-                font-family: Arial;
-                font-size: 12pt;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                margin: 5px;
-                background-color: #ffffff;
-            }
-            QPushButton {
-                background-color: #468585;
-                color: white;
-                border: none;
-                padding: 10px 24px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 14px;
-                margin: 4px 2px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #50B498;
-            }
-            QDialog {
-                background-color: #ffffff;
-            }
-            QLineEdit {
-                border: 1px solid #ddd;
-                padding: 5px;
-                border-radius: 5px;
-            }
-            QDialogButtonBox {
-                background-color: #f5f5f5;
-            }
+QLabel {
+    font-family: Arial;
+    font-size: 12pt;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 5px;
+    background-color: #ffffff;
+}
+QPushButton {
+    background-color: #468585;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    margin: 4px 2px;
+    border-radius: 5px;
+}
+QPushButton:hover {
+    background-color: #50B498;
+}
+QDialog {
+    background-color: #ffffff;
+}
+QLineEdit {
+    border: 1px solid #ddd;
+    padding: 5px;
+    border-radius: 5px;
+}
+QDialogButtonBox {
+    background-color: #f5f5f5;
+}

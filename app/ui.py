@@ -58,8 +58,8 @@ class BatteryMonitoringSystem(QMainWindow):
         # Left-aligned layout
         left_layout = QHBoxLayout()
         left_layout.setAlignment(Qt.AlignLeft)
-        top_bar_label = QLabel("Battery Management System V - 1.0.0", self)
-        top_bar_label.setStyleSheet("font-size: 12px; font-weight: bold;")
+        top_bar_label = QLabel("Battery Management \n System V - 1.0.0", self)
+        top_bar_label.setStyleSheet("font-size: 16px; font-weight: bold; border:none")
         left_layout.addWidget(top_bar_label)
 
         # Center-aligned layout for recording status and remaining time
@@ -67,14 +67,14 @@ class BatteryMonitoringSystem(QMainWindow):
         center_layout.setAlignment(Qt.AlignCenter)
         
         # Create the recording status label
-        self.recording_status_label = QLabel("Not Recording")
-        self.recording_status_label.setStyleSheet("color: red; font-weight: bold;")
+        self.recording_status_label = QLabel("Not Recording...")
+        self.recording_status_label.setStyleSheet("color: red; font-weight: bold; border:none;")
         center_layout.addWidget(self.recording_status_label)
 
         # Create the counter label for remaining time
         self.counter_label = QLabel(self)
         self.counter_label.setAlignment(Qt.AlignCenter)
-        self.counter_label.setStyleSheet("color: white; font-size: 16px;")
+        self.counter_label.setStyleSheet("color: white; font-size: 16px; border:none")
         center_layout.addWidget(self.counter_label)
 
         # Right-aligned layout
@@ -82,8 +82,8 @@ class BatteryMonitoringSystem(QMainWindow):
         right_layout.setAlignment(Qt.AlignRight)
         date = QLabel(f"Date: {QDate.currentDate().toString('yyyy-MM-dd')}")
         self.clock = QLabel(f"Time(IST): {QDateTime.currentDateTime().toString('hh:mm:ss')}")
-        date.setStyleSheet("font-size: 10px; padding: 5px;")
-        self.clock.setStyleSheet("font-size: 10px; padding: 5px;")
+        date.setStyleSheet("font-size: 14px; padding: 5px; font-weight: bold;")
+        self.clock.setStyleSheet("font-size: 14px; padding: 5px; font-weight: bold;")
         right_layout.addWidget(date)
         right_layout.addWidget(self.clock)
 
@@ -161,10 +161,15 @@ class BatteryMonitoringSystem(QMainWindow):
         
         # Timer Label
         self.timer_label = QLabel("Next data log in: 15:00")
+        self.timer_label.setStyleSheet("font-size: 14px; margin-left: 20px;")
         bottom_bar_layout.addWidget(self.timer_label)
          # Initialize Timer
-        self.time_remaining = QTime(0, 15, 0)
+        self.time_remaining = QTime(0, 2, 0)
         self.update_timer_label()
+
+        # Timer Label
+        # self.timer_label = QLabel("Next data log in: 15:00")
+        # bottom_bar_layout.addWidget(self.timer_label)
 
         main_layout.addWidget(bottom_bar)
 
@@ -176,6 +181,11 @@ class BatteryMonitoringSystem(QMainWindow):
         self.clock_timer.timeout.connect(self.update_clock)
         self.clock_timer.start(1000)  # Update every second
 
+        #timer for 15-min remaing timer 
+        self.min_15_remaing_timer = QTimer(self)
+        self.min_15_remaing_timer.timeout.connect(self.update_timer)
+        
+    #IST clock
     def update_clock(self):
         self.clock.setText(f"Time(IST): {QDateTime.currentDateTime().toString('hh:mm:ss')}")
 
@@ -232,7 +242,6 @@ class BatteryMonitoringSystem(QMainWindow):
         
         button.setStyleSheet("background-color: #50B498; color: black; border: none; font-size: 16px; padding: 5px;")
         self.prev_button = button
-
         self.display_batteries(bank_id)
 
     def fetch_serial_numbers(self, bank_id):
@@ -344,17 +353,19 @@ class BatteryMonitoringSystem(QMainWindow):
         conn.close()
 
     def open_test_info_dialog(self):
-        if(self.current_bank_id):
-            dialog = TestInfoDialog(self)
-            if dialog.exec_():
-                self.test_details = dialog.get_test_details()
-                # self.start_recording()
+        if (self.is_recording):
+            if(self.current_bank_id):
+                dialog = TestInfoDialog(self)
+                if dialog.exec_():
+                    self.test_details = dialog.get_test_details()
+                    # self.start_recording()
 
     def start_test_recording(self, test_run_id, test_duration):
         print("Recording started")
         if not self.is_recording:
             self.is_recording = True
             self.update_recording_status()
+            self.min_15_remaing_timer.start(1000)
         # Set the remaining time to the test duration
         self.remaining_time = test_duration * 60 * 60 # Convert minutes to seconds
         
@@ -409,6 +420,7 @@ class BatteryMonitoringSystem(QMainWindow):
                 self.is_recording = False
                 self.update_recording_status()
             print("Test recording completed")
+            self.min_15_remaing_timer.stop()
             return
 
         latest_row = self.read_latest_data('../data/battery_data.csv')
@@ -435,6 +447,8 @@ class BatteryMonitoringSystem(QMainWindow):
             self.recording_timer.stop()
         if self.counter_timer:
             self.counter_timer.stop()
+        if self.min_15_remaing_timer:
+            self.min_15_remaing_timer.stop()
         if self.is_recording:
             self.is_recording = False
             self.update_recording_status()
@@ -512,14 +526,14 @@ class BatteryMonitoringSystem(QMainWindow):
         self.update_timer_label()
         
         if self.time_remaining == QTime(0, 0, 0):
-            self.log_data()
             self.reset_timer()
 
+    #function for 15 mins timer
     def update_timer_label(self):
         self.timer_label.setText(f"Next data log in: {self.time_remaining.toString('mm:ss')}")
     
     def reset_timer(self):
-        self.time_remaining = QTime(0, 15, 0)
+        self.time_remaining = QTime(0, 2, 0)
 
     def show_graph(self):
         pass  # Add logic to show graph
@@ -537,3 +551,16 @@ class BatteryMonitoringSystem(QMainWindow):
         with open("./styles/styles.qss", 'r') as file:
             self.setStyleSheet(file.read())
 
+    def get_pending_test_info(self, bank_id):
+        query = """
+        SELECT t.*, tr.*
+        FROM tests t
+        JOIN test_runs tr ON t.id = tr.test_id
+        WHERE t.bank_id = %s AND tr.status = 'pending'
+        LIMIT 1;
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(query, (bank_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        return result
