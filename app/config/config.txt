@@ -4,4 +4,4 @@ user=postgres
 password=raza
 host=localhost
 port=5432
-csv_file_path=C:\Users\Unicon\Desktop\Battery_1\battery-monitoring\app\config\bank_config.csv
+csv_file_path=C:\Users\PalakBhagat\Desktop\Battery\battery-monitoring\app\config\bank_config.csv

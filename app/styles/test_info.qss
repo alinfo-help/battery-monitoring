@@ -1,0 +1,46 @@
+QDialog {
+    background-color: #fff;
+}
+QLabel {
+    font-family: Arial;
+    font-size: 10pt;
+    padding: 5px;
+    color: #000;
+}
+QLineEdit, QComboBox, QDoubleSpinBox, QDateEdit {
+    font-family: Arial;
+    font-size: 10pt;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #000;
+}
+QGroupBox {
+    font-family: Arial;
+    font-size: 11pt;
+    font-weight: bold;
+    padding: 7px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 10px;
+    color: #000;
+}
+QDialogButtonBox {
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+QPushButton {
+    background-color: #468585;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    margin: 4px 2px;
+    border-radius: 5px;
+}
+QPushButton:hover {
+    background-color: #50B498;
+}

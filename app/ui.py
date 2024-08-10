@@ -1,14 +1,13 @@
-import csv
-import os
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QGridLayout, QWidget, QLabel, QHBoxLayout, QPushButton, QFrame, QSizePolicy, QScrollArea
+from PyQt5.QtWidgets import  QMainWindow, QVBoxLayout, QGridLayout, QWidget, QLabel, QHBoxLayout, QPushButton, QFrame, QSizePolicy, QScrollArea
 from PyQt5.QtCore import QTimer, Qt, QDateTime, QDate ,QTime
-from PyQt5.QtGui import QPixmap, QPainter, QColor
-from db_code.db_client import get_connection
+
 from settings import SettingsDialog
 from test_info import TestInfoDialog
 from datetime import datetime, timedelta
 from report import generate_pdf_report
+from db_code.db_client import get_connection
+from utils.db_utils import fetch_serial_numbers, get_test_run_start_time, get_no_cells
+from utils.csv_utils import read_latest_data
 
 class BatteryMonitoringSystem(QMainWindow):
     def __init__(self):
@@ -36,7 +35,7 @@ class BatteryMonitoringSystem(QMainWindow):
         self.is_recording = False
         
     def init_ui(self):
-        self.setWindowTitle("Battery Management System V - 1.0.0")
+        self.setWindowTitle("Battery Monitoring System V - 1.0.0")
         self.showMaximized()
 
         central_widget = QWidget(self)
@@ -58,7 +57,7 @@ class BatteryMonitoringSystem(QMainWindow):
         # Left-aligned layout
         left_layout = QHBoxLayout()
         left_layout.setAlignment(Qt.AlignLeft)
-        top_bar_label = QLabel("Battery Management \n System V - 1.0.0", self)
+        top_bar_label = QLabel("Battery Monitoring \n System V - 1.0.0", self)
         top_bar_label.setStyleSheet("font-size: 16px; font-weight: bold; border:none")
         left_layout.addWidget(top_bar_label)
 
@@ -204,19 +203,8 @@ class BatteryMonitoringSystem(QMainWindow):
 
         for bank in banks:
             button = QPushButton(bank[1], self)
-            button.setStyleSheet("""
-                                        QPushButton {
-                                        background-color: #1E3D58;
-                                        color: white;
-                                        border: none;
-                                        font-size: 16px;
-                                        padding: 5px;
-                                    }
-                                    QPushButton:hover {
-                                        background-color: #50B498;
-                                        color: black;
-                                    }
-                                """)
+            with open("./styles/button.qss","r") as file:
+                button.setStyleSheet(file.read())
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             button.setFixedHeight(40)
             button.clicked.connect(lambda _, bank_id=bank[0], btn=button: self.on_menu_button_click(bank_id, btn))
@@ -225,38 +213,12 @@ class BatteryMonitoringSystem(QMainWindow):
     def on_menu_button_click(self, bank_id, button):
         self.current_bank_id = bank_id
         if self.prev_button:
-            # self.prev_button.setStyleSheet("background-color: #1E3D58; color: white; border: none; font-size: 16px; padding: 5px;")
-            self.prev_button.setStyleSheet("""
-                                        QPushButton {
-                                        background-color: #1E3D58;
-                                        color: white;
-                                        border: none;
-                                        font-size: 16px;
-                                        padding: 5px;
-                                    }
-                                    QPushButton:hover {
-                                        background-color: #50B498;
-                                        color: black;
-                                    }
-                                """)
+            with open("./styles/button.qss","r") as file:
+                self.prev_button.setStyleSheet(file.read())
         
         button.setStyleSheet("background-color: #50B498; color: black; border: none; font-size: 16px; padding: 5px;")
         self.prev_button = button
         self.display_batteries(bank_id)
-
-    def fetch_serial_numbers(self, bank_id):
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT serial_number
-            FROM batteries
-            WHERE bank_id = %s
-            ORDER BY battery_number
-        """, (bank_id,))
-        serial_numbers = [row[0] for row in cur.fetchall()]
-        cur.close()
-        conn.close()
-        return serial_numbers
     
     def display_batteries(self, bank_id):
         for i in reversed(range(self.grid_layout.count())):
@@ -265,15 +227,9 @@ class BatteryMonitoringSystem(QMainWindow):
             widget_to_remove.setParent(None)
 
         if bank_id:
-            conn = get_connection()
-            cur = conn.cursor()
-            cur.execute("SELECT number_of_cells FROM banks WHERE id = %s", (bank_id,))
-            number_of_cells = cur.fetchone()[0]
-            cur.close()
-            conn.close()
-
+            number_of_cells = get_no_cells(bank_id)
             self.labels = []
-            self.serial_numbers = self.fetch_serial_numbers(bank_id)
+            self.serial_numbers = fetch_serial_numbers(bank_id)
 
             # Add QLabel for total voltage and current at the top
             self.total_voltage_label = QLabel('Total Voltage: 0 V\t\tTotal Current: 0 A')
@@ -289,7 +245,7 @@ class BatteryMonitoringSystem(QMainWindow):
 
     def update_data(self):
         if(self.current_bank_id):
-            latest_row = self.read_latest_data('../data/battery_data.csv')
+            latest_row = read_latest_data('../data/battery_data.csv')
             if latest_row:
                 total_voltage = 0
                 total_current = 0
@@ -303,7 +259,7 @@ class BatteryMonitoringSystem(QMainWindow):
 
                     color = "#4E9F3D" if voltage > 6.5 else "#ED2B2A"
                     serial_number = self.serial_numbers[i]
-                    text = f'Battery {i+1}: {serial_number} '
+                    text = f'{serial_number}'
                     text += f"\nVoltage: {voltage} V"
                     text += f'\nTemp.: {temp} C'
                     # if serial_number:
@@ -313,16 +269,6 @@ class BatteryMonitoringSystem(QMainWindow):
 
                 # Update total voltage and current
                 self.total_voltage_label.setText(f'Total Voltage: {total_voltage} V\t\tTotal Current: {current} A')
-
-    def read_latest_data(self, csv_file_path):
-        if not os.path.isfile(csv_file_path):
-            return None
-        with open(csv_file_path, 'r') as csvfile:
-            csvreader = csv.DictReader(csvfile)
-            latest_row = None
-            for row in csvreader:
-                latest_row = row  # Last row will be the latest
-            return latest_row
 
     def open_settings_dialog(self):
         if self.current_bank_id is None:
@@ -337,11 +283,9 @@ class BatteryMonitoringSystem(QMainWindow):
     def save_serial_numbers(self, serial_numbers):
         conn = get_connection()
         cur = conn.cursor()
-
         # Update the serial numbers in the batteries table based on the current_bank_id
         for i, serial_number in enumerate(serial_numbers):
-            # Assuming the batteries table has columns `battery_id`, `bank_id`, and `serial_number`
-            battery_id = i + 1  # Adjust based on your logic for battery_id
+            battery_id = i + 1  
             cur.execute("""
                 UPDATE batteries
                 SET serial_number = %s
@@ -353,7 +297,7 @@ class BatteryMonitoringSystem(QMainWindow):
         conn.close()
 
     def open_test_info_dialog(self):
-        if (self.is_recording):
+        if (not self.is_recording):
             if(self.current_bank_id):
                 dialog = TestInfoDialog(self)
                 if dialog.exec_():
@@ -396,7 +340,7 @@ class BatteryMonitoringSystem(QMainWindow):
     def update_test_run(self, status):
         end_time = datetime.now()
         if 'start_time' not in self.test_details:
-            self.test_details['start_time'] = self.get_test_run_start_time(self.test_run_id)
+            self.test_details['start_time'] = get_test_run_start_time(self.test_run_id)
         duration_tested = end_time - self.test_details['start_time']
         
         conn = get_connection()
@@ -423,7 +367,7 @@ class BatteryMonitoringSystem(QMainWindow):
             self.min_15_remaing_timer.stop()
             return
 
-        latest_row = self.read_latest_data('../data/battery_data.csv')
+        latest_row = read_latest_data('../data/battery_data.csv')
         if self.current_bank_id:
             if latest_row:
                 for i, label in enumerate(self.labels):
@@ -455,22 +399,10 @@ class BatteryMonitoringSystem(QMainWindow):
         
         # Fetch the start time from the database if not present in test_details
         if 'start_time' not in self.test_details:
-            self.test_details['start_time'] = self.get_test_run_start_time(self.test_run_id)
+            self.test_details['start_time'] = get_test_run_start_time(self.test_run_id)
         
         # Update the test run status
         self.update_test_run('pending')
-    
-    # Method to get the start_time from the test_runs table
-    def get_test_run_start_time(self, test_run_id):
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT start_time FROM test_runs WHERE id = %s
-        """, (test_run_id,))
-        start_time = cur.fetchone()[0]
-        cur.close()
-        conn.close()
-        return start_time
 
     #method for recoding lable logic 
     def update_recording_status(self):
@@ -495,19 +427,8 @@ class BatteryMonitoringSystem(QMainWindow):
         options = ["Graph", "Reports",  "About"]
         for option in options:
             button = QPushButton(option, self)
-            button.setStyleSheet("""
-                                        QPushButton {
-                                        background-color: #1E3D58;
-                                        color: white;
-                                        border: none;
-                                        font-size: 16px;
-                                        padding: 5px;
-                                    }
-                                    QPushButton:hover {
-                                        background-color: #50B498;
-                                        color: black;
-                                    }
-                                """)
+            with open("./styles/button.qss","r") as file:
+                button.setStyleSheet(file.read())
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             button.setFixedHeight(40)
             # Connect buttons to appropriate slots or methods
@@ -550,17 +471,3 @@ class BatteryMonitoringSystem(QMainWindow):
     def apply_styles(self):
         with open("./styles/styles.qss", 'r') as file:
             self.setStyleSheet(file.read())
-
-    def get_pending_test_info(self, bank_id):
-        query = """
-        SELECT t.*, tr.*
-        FROM tests t
-        JOIN test_runs tr ON t.id = tr.test_id
-        WHERE t.bank_id = %s AND tr.status = 'pending'
-        LIMIT 1;
-        """
-        cursor = self.conn.cursor()
-        cursor.execute(query, (bank_id,))
-        result = cursor.fetchone()
-        cursor.close()
-        return result
