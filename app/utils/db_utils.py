@@ -49,3 +49,11 @@ def get_no_cells(bank_id):
     conn.close()
     return number_of_cells
 
+def get_bank():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name FROM banks")
+    banks = cur.fetchall()
+    cur.close()
+    conn.close()
+    return banks
