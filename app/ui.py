@@ -503,7 +503,6 @@ class BatteryMonitoringSystem(QMainWindow):
         self.timer.timeout.connect(self.refresh_data)  # Connect to a method that updates data for the current bank
         self.timer.start(5000)  # 5000 milliseconds = 5 seconds
 
-
     def init_ui(self):
         self.setWindowTitle("Battery Monitoring System V - 1.0.0")
         self.showMaximized()
@@ -531,26 +530,41 @@ class BatteryMonitoringSystem(QMainWindow):
         top_bar_label.setStyleSheet("font-size: 16px; font-weight: bold; border:none")
         left_layout.addWidget(top_bar_label)
 
-        # Center-aligned layout for recording status and remaining time
+        # Center-aligned layout for recording status, test name, and remaining time
         center_layout = QVBoxLayout()
         center_layout.setAlignment(Qt.AlignCenter)
 
         # Create the recording status label
-        self.recording_status_label = QLabel("Not Recording...")
-        self.recording_status_label.setStyleSheet("color: red; font-weight: bold; border:none;")
+        self.recording_status_label = QLabel("Not Recording...", self)
+        self.recording_status_label.setStyleSheet("color: red; font-weight: bold; border:none")
         center_layout.addWidget(self.recording_status_label)
+
+        # Create a horizontal layout for test name, duration, and counter
+        test_info_layout = QHBoxLayout()
+        test_info_layout.setAlignment(Qt.AlignCenter)
+
+        # Create the test name and duration labels (these will be updated dynamically)
+        self.test_name_label = QLabel("Test: N/A", self)
+        self.test_name_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold; margin-right: 20px;")
+        test_info_layout.addWidget(self.test_name_label)
+
+        self.test_duration_label = QLabel("Duration: 0 hrs", self)
+        self.test_duration_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold; margin-right: 20px;")
+        test_info_layout.addWidget(self.test_duration_label)
 
         # Create the counter label for remaining time
         self.counter_label = QLabel(self)
         self.counter_label.setAlignment(Qt.AlignCenter)
         self.counter_label.setStyleSheet("color: white; font-size: 16px; border:none")
-        center_layout.addWidget(self.counter_label)
+        test_info_layout.addWidget(self.counter_label)
+
+        center_layout.addLayout(test_info_layout)
 
         # Right-aligned layout
         right_layout = QVBoxLayout()
         right_layout.setAlignment(Qt.AlignRight)
-        date = QLabel(f"Date: {QDate.currentDate().toString('yyyy-MM-dd')}")
-        self.clock = QLabel(f"Time(IST): {QDateTime.currentDateTime().toString('hh:mm:ss')}")
+        date = QLabel(f"Date: {QDate.currentDate().toString('yyyy-MM-dd')}", self)
+        self.clock = QLabel(f"Time(IST): {QDateTime.currentDateTime().toString('hh:mm:ss')}", self)
         date.setStyleSheet("font-size: 14px; padding: 5px; font-weight: bold;")
         self.clock.setStyleSheet("font-size: 14px; padding: 5px; font-weight: bold;")
         right_layout.addWidget(date)
@@ -627,7 +641,7 @@ class BatteryMonitoringSystem(QMainWindow):
         bottom_bar_layout.addWidget(self.bottom_bar_data_points)
 
         # Timer Label
-        self.timer_label = QLabel("Next data log in: 15:00")
+        self.timer_label = QLabel("Next data log in: 15:00", self)
         self.timer_label.setStyleSheet("font-size: 14px; margin-left: 20px;")
         bottom_bar_layout.addWidget(self.timer_label)
 
@@ -660,9 +674,21 @@ class BatteryMonitoringSystem(QMainWindow):
         if self.current_bank_id:
             self.update_data(self.current_bank_id)
 
-
     def on_menu_button_click(self, bank_id, button):
         if bank_id not in self.bank_tests:
+            # Create the QLabel objects with styling immediately
+            recording_status_label = QLabel("Not Recording...", self)
+            recording_status_label.setStyleSheet("color: red; font-weight: bold;")
+
+            counter_label = QLabel(self)
+            counter_label.setStyleSheet("color: white; font-size: 16px;")
+
+            test_name_label = QLabel("Test: N/A", self)
+            test_name_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+
+            test_duration_label = QLabel("Duration: 0 hrs", self)
+            test_duration_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+
             self.bank_tests[bank_id] = {
                 'labels': [],
                 'serial_numbers': [],
@@ -672,8 +698,12 @@ class BatteryMonitoringSystem(QMainWindow):
                 'remaining_time': 0,
                 'counter_timer': None,
                 'data_log_counter': 0,
-                'recording_status_label': QLabel("Not Recording...", self),  # Independent recording status
-                'counter_label': QLabel(self)  # Independent counter label
+                'recording_status_label': recording_status_label,  # Independent recording status
+                'counter_label': counter_label,  # Independent counter label
+                'data_points_label': QLabel("Data points logged: 0", self),  # Independent data points counter
+                'timer_label': QLabel("Next data log in: 00:00", self),  # Independent timer label
+                'test_name_label': test_name_label,  # Independent test name label
+                'test_duration_label': test_duration_label,  # Independent test duration label
             }
 
         self.current_bank_id = bank_id  # Set the current_bank_id here
@@ -686,7 +716,6 @@ class BatteryMonitoringSystem(QMainWindow):
         self.bank_tests['prev_button'] = button
         self.display_batteries(bank_id)
         self.update_ui_for_selected_bank(bank_id)  # Update the UI when switching banks
-        self.update_data(bank_id)
 
     def update_ui_for_selected_bank(self, bank_id):
         bank_test = self.bank_tests[bank_id]
@@ -699,6 +728,13 @@ class BatteryMonitoringSystem(QMainWindow):
         self.counter_label.setText(bank_test['counter_label'].text())
         self.counter_label.setStyleSheet(bank_test['counter_label'].styleSheet())
 
+        # Update data points label
+        self.bottom_bar_data_points.setText(bank_test['data_points_label'].text())
+        self.timer_label.setText(bank_test['timer_label'].text())
+
+        # Update test name and duration on the top bar
+        self.test_name_label.setText(bank_test['test_name_label'].text())
+        self.test_duration_label.setText(bank_test['test_duration_label'].text())
 
     def display_batteries(self, bank_id):
         bank_test = self.bank_tests[bank_id]
@@ -757,6 +793,18 @@ class BatteryMonitoringSystem(QMainWindow):
         if bank_id == self.current_bank_id:
             self.update_ui_for_selected_bank(bank_id)
 
+    def update_remaining_time_counter(self, bank_id):
+        bank_test = self.bank_tests[bank_id]
+        if bank_test['remaining_time'] > 0:
+            bank_test['remaining_time'] -= 1
+            time_str = QTime(0, 0).addSecs(int(bank_test['remaining_time'])).toString("hh:mm:ss")
+            bank_test['counter_label'].setText(f"Remaining Time: {time_str}")
+        else:
+            bank_test['counter_timer'].stop()
+            bank_test['counter_label'].setText("Test Completed")
+
+        if bank_id == self.current_bank_id:
+            self.counter_label.setText(bank_test['counter_label'].text())
 
     def open_settings_dialog(self):
         if self.current_bank_id is None:
@@ -795,7 +843,6 @@ class BatteryMonitoringSystem(QMainWindow):
         if bank_id == self.current_bank_id:
             self.update_data(bank_id)
 
-
     def open_test_info_dialog(self):
         bank_id = self.current_bank_id  # Ensure that the current_bank_id is being used
         bank_test = self.bank_tests[bank_id] if bank_id else None
@@ -805,28 +852,36 @@ class BatteryMonitoringSystem(QMainWindow):
                 if dialog.exec_():
                     bank_test['test_details'] = dialog.get_test_details()
 
-    def start_test_recording(self, bank_id, test_run_id, test_duration):
+    def start_test_recording(self, bank_id, test_run_id, test_duration, test_name):
         bank_test = self.bank_tests[bank_id]
         if not bank_test['is_recording']:
             bank_test['is_recording'] = True
-            bank_test['remaining_time'] = test_duration * 60 * 60  # Convert minutes to seconds
+            bank_test['remaining_time'] = test_duration * 60 * 60  # Convert hours to seconds
             bank_test['test_run_id'] = test_run_id
-            bank_test['test_end_time'] = datetime.now() + timedelta(minutes=test_duration * 60)
+            bank_test['test_end_time'] = datetime.now() + timedelta(hours=test_duration)
 
-            # Update the UI for the selected bank
+            # Update the test name and duration labels in the top bar
+            bank_test['test_name_label'].setText(f"Test: {test_name}")
+            bank_test['test_duration_label'].setText(f"Duration: {test_duration} hrs")
+
+            if bank_id == self.current_bank_id:
+                self.test_name_label.setText(bank_test['test_name_label'].text())
+                self.test_duration_label.setText(bank_test['test_duration_label'].text())
+
             self.update_recording_status(bank_id)
-            self.update_counter(bank_id)
+            self.update_remaining_time_counter(bank_id)
             self.record_data(bank_id)
 
+            # Start the counter for the remaining time
             bank_test['counter_timer'] = QTimer(self)
-            bank_test['counter_timer'].timeout.connect(lambda: self.update_counter(bank_id))
+            bank_test['counter_timer'].timeout.connect(lambda: self.update_remaining_time_counter(bank_id))
             bank_test['counter_timer'].start(1000)  # Update every second
 
-            # Timer for recording data every 15 minutes
-            bank_test['timer'] = QTimer(self)
-            bank_test['timer'].timeout.connect(lambda: self.record_data(bank_id))
-            bank_test['timer'].start(2 * 60 * 1000)  # 15 minutes in milliseconds
-
+            # Start the 15-minute data logging timer
+            bank_test['remaining_time_for_logging'] = 2 * 60  # 15 minutes in seconds
+            bank_test['logging_timer'] = QTimer(self)
+            bank_test['logging_timer'].timeout.connect(lambda: self.update_data_logging_timer(bank_id))
+            bank_test['logging_timer'].start(1000)  # Update every second
 
     def update_counter(self, bank_id):
         bank_test = self.bank_tests[bank_id]
@@ -840,7 +895,6 @@ class BatteryMonitoringSystem(QMainWindow):
         # If this is the currently selected bank, update the displayed label
         if bank_id == self.current_bank_id:
             self.counter_label.setText(bank_test['counter_label'].text())
-
 
     def update_test_run(self, bank_id, status):
         bank_test = self.bank_tests[bank_id]
@@ -865,7 +919,7 @@ class BatteryMonitoringSystem(QMainWindow):
         bank_test = self.bank_tests[bank_id]
 
         if datetime.now() >= bank_test['test_end_time']:
-            bank_test['timer'].stop()
+            bank_test['logging_timer'].stop()
             bank_test['is_recording'] = False
             self.update_test_run(bank_id, 'completed')
             return
@@ -877,15 +931,43 @@ class BatteryMonitoringSystem(QMainWindow):
                     conn = get_connection()
                     cur = conn.cursor()
                     table_name = f"recorded_data_{bank_id}"
+                    
+                    voltage = float(latest_row.get(f"Bank1.B{i + 1}", 0.0))
+                    current = float(latest_row.get("Current", 0.0))
+                    temperature = float(latest_row.get("Temperature", 0.0))
+                    
                     cur.execute(f"""
                         INSERT INTO {table_name} (test_run_id, battery_number, voltage, current, temperature)
                         VALUES (%s, %s, %s, %s, %s) RETURNING id
-                    """, (bank_test['test_run_id'], i + 1, latest_row.get(f"Bank1.B{i + 1}"), latest_row.get("Current", 0), latest_row.get("Temperature", 0)))
+                    """, (bank_test['test_run_id'], i + 1, voltage, current, temperature))
+                    
                     conn.commit()
                     cur.close()
                     conn.close()
+
                 bank_test['data_log_counter'] += 1
-                self.update_data_log_count(bank_id, bank_test['data_log_counter'])
+                bank_test['data_points_label'].setText(f"Data points logged: {bank_test['data_log_counter']}")
+
+                # Reset the timer for the next logging interval
+                bank_test['remaining_time_for_logging'] = 15 * 60  # Reset to 15 minutes
+                self.update_data_logging_timer(bank_id)
+
+    def update_data_logging_timer(self, bank_id):
+        bank_test = self.bank_tests[bank_id]
+        if bank_test['remaining_time_for_logging'] > 0:
+            bank_test['remaining_time_for_logging'] -= 1
+            time_str = QTime(0, 0).addSecs(int(bank_test['remaining_time_for_logging'])).toString("mm:ss")
+            bank_test['timer_label'].setText(f"Next data log in: {time_str}")
+
+            # If this is the currently selected bank, update the displayed label
+            if bank_id == self.current_bank_id:
+                self.timer_label.setText(bank_test['timer_label'].text())
+        else:
+            # Time to log data
+            self.record_data(bank_id)
+            # Reset the timer for the next 15-minute interval
+            bank_test['remaining_time_for_logging'] = 2 * 60  # Reset to 15 minutes
+            self.update_data_logging_timer(bank_id)  # Restart the countdown
 
     def stop_recording(self, bank_id=None):
         bank_id = bank_id or self.current_bank_id
@@ -906,7 +988,6 @@ class BatteryMonitoringSystem(QMainWindow):
 
             self.update_test_run(bank_id, 'pending')
 
-
     def update_recording_status(self, bank_id):
         bank_test = self.bank_tests[bank_id]
         if bank_test['is_recording']:
@@ -920,7 +1001,6 @@ class BatteryMonitoringSystem(QMainWindow):
         if bank_id == self.current_bank_id:
             self.recording_status_label.setText(bank_test['recording_status_label'].text())
             self.recording_status_label.setStyleSheet(bank_test['recording_status_label'].styleSheet())
-
 
     def update_data_log_count(self, bank_id, count):
         self.bottom_bar_data_points.setText(f"Data points logged: {count}")
@@ -956,7 +1036,12 @@ class BatteryMonitoringSystem(QMainWindow):
 
     def update_timer_label(self, bank_id):
         bank_test = self.bank_tests[bank_id]
-        self.timer_label.setText(f"Next data log in: {bank_test['time_remaining'].toString('mm:ss')}")
+        time_remaining = QTime(0, 0).addSecs(bank_test['remaining_time'])
+        bank_test['timer_label'].setText(f"Next data log in: {time_remaining.toString('mm:ss')}")
+
+        # If this is the currently selected bank, update the displayed label
+        if bank_id == self.current_bank_id:
+            self.timer_label.setText(bank_test['timer_label'].text())
 
     def reset_timer(self, bank_id):
         bank_test = self.bank_tests[bank_id]

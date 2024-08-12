@@ -237,7 +237,7 @@ class TestInfoDialog(QDialog):
         self.accept()
 
         # Trigger the start of the test recording in the parent class
-        self.parent().start_test_recording(self.bank_id, self.test_id, test_details["test_duration"])
+        self.parent().start_test_recording(self.bank_id, self.test_id, test_details["test_duration"],test_details['test_name'])
 
     def populate_fields(self, test_info):
         if test_info:
