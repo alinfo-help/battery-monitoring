@@ -1,5 +1,5 @@
-from db_client import get_connection
-from db_config import read_config
+from db_code.db_client import get_connection
+from db_code.db_config import read_config
 import csv
 
 def create_tables() :
@@ -80,10 +80,11 @@ def create_recorded_data_table(bank_name):
         CREATE TABLE IF NOT EXISTS {table_name} (
             id SERIAL PRIMARY KEY,
             test_run_id INTEGER NOT NULL REFERENCES test_runs(id),
-            battery_number INTEGER NOT NULL,
-            voltage DECIMAL(10, 2) NOT NULL,
+            voltage DECIMAL(10, 2)[] NOT NULL,
+            total_voltage DECIMAL(10, 2) NOT NULL,
             current DECIMAL(10, 2) NOT NULL,
-            temperature DECIMAL(10, 2) NOT NULL,
+            temperature DECIMAL(10, 2)[] NOT NULL,
+            avg_temperature DECIMAL(10, 2) NOT NULL,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
@@ -93,5 +94,5 @@ def create_recorded_data_table(bank_name):
 
 
 # Call the function to create the tables
-create_tables()
-create_recording_table()
+# create_tables()
+# create_recording_table()

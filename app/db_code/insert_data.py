@@ -1,6 +1,6 @@
 import csv
-from db_config import read_config
-from db_client import get_connection
+from db_code.db_config import read_config
+from db_code.db_client import get_connection
 from psycopg2.extras import RealDictCursor
 
 def insert_bank(name, number_of_cells, description, voltage):
@@ -62,5 +62,5 @@ def insert_batteries_for_all_banks():
             insert_battery(bank_id, battery_number,serial_number)
 
 
-insert_banks_from_csv()
-insert_batteries_for_all_banks()
+# insert_banks_from_csv()
+# insert_batteries_for_all_banks()

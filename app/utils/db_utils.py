@@ -57,3 +57,44 @@ def get_bank():
     cur.close()
     conn.close()
     return banks
+
+def get_bank_with_no_cell():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, number_of_cells FROM banks")
+    banks = cur.fetchall()
+    cur.close()
+    conn.close()
+    return banks
+
+
+def check_if_tables_exist():
+    # Example connection string; modify as per your database config
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name='banks');")
+    banks_exists = cur.fetchone()[0]
+    
+    cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name='batteries');")
+    batteries_exists = cur.fetchone()[0]
+    
+    cur.close()
+    conn.close()
+    
+    return banks_exists and batteries_exists
+
+def check_if_data_exists():
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT COUNT(*) FROM banks;")
+    banks_count = cur.fetchone()[0]
+    
+    cur.execute("SELECT COUNT(*) FROM batteries;")
+    batteries_count = cur.fetchone()[0]
+    
+    cur.close()
+    conn.close()
+    
+    return banks_count > 0 and batteries_count > 0
