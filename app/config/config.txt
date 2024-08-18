@@ -1,5 +1,5 @@
 [DEFAULT]
-dbname=BMS
+dbname=BMS_2
 user=postgres
 password=salman9285
 host=localhost

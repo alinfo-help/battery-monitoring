@@ -479,6 +479,7 @@ from report import generate_pdf_report
 from db_code.db_client import get_connection
 from utils.db_utils import fetch_serial_numbers, get_test_run_start_time, get_no_cells, get_bank
 from utils.csv_utils import read_latest_data
+from utils.read_data import read_data
 
 
 class BatteryMonitoringSystem(QMainWindow):
@@ -502,6 +503,8 @@ class BatteryMonitoringSystem(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_data)  # Connect to a method that updates data for the current bank
         self.timer.start(5000)  # 5000 milliseconds = 5 seconds
+
+        
 
     def init_ui(self):
         self.setWindowTitle("Battery Monitoring System V - 1.0.0")
@@ -671,10 +674,12 @@ class BatteryMonitoringSystem(QMainWindow):
             self.left_menu_layout.addWidget(button)
 
     def refresh_data(self):
-        if self.current_bank_id:
-            self.update_data(self.current_bank_id)
+        # if self.current_bank_id:
+        #     # self.update_data(self.current_bank_id)
+        pass
 
     def on_menu_button_click(self, bank_id, button):
+        self.start_timer("COM4", bank_id)
         if bank_id not in self.bank_tests:
             # Create the QLabel objects with styling immediately
             recording_status_label = QLabel("Not Recording...", self)
@@ -760,38 +765,71 @@ class BatteryMonitoringSystem(QMainWindow):
                 self.grid_layout.addWidget(label, (i // 4) + 1, i % 4)  # Adjust the row and column index
                 bank_test['labels'].append(label)
 
-            self.update_data(bank_id)
+            # self.update_data(bank_id)
 
-    def update_data(self, bank_id):
-        bank_test = self.bank_tests[bank_id]
+    # def update_data(self, bank_id):
+    #     bank_test = self.bank_tests[bank_id]
 
-        latest_row = read_latest_data('../data/battery_data.csv')  # No bank_id needed here
-        if latest_row:
-            total_voltage = 0
-            total_current = 0
+    #     latest_row = read_latest_data('../data/battery_data.csv')  # No bank_id needed here
+    #     if latest_row:
+    #         total_voltage = 0
+    #         total_current = 0
 
-            for i, label in enumerate(bank_test['labels']):
-                # Assuming data for each battery is stored with a pattern like 'Bank1.B1', 'Bank2.B1', etc.
-                voltage_key = f"Bank1.B{i + 1}"
-                voltage = float(latest_row.get(voltage_key, 0))  # Default to 0 if key not found
+    #         for i, label in enumerate(bank_test['labels']):
+    #             # Assuming data for each battery is stored with a pattern like 'Bank1.B1', 'Bank2.B1', etc.
+    #             voltage_key = f"Bank1.B{i + 1}"
+    #             voltage = float(latest_row.get(voltage_key, 0))  # Default to 0 if key not found
+    #             total_voltage += voltage
+    #             temp = float(latest_row.get("Temperature", 0))
+    #             current = float(latest_row.get("Current", 0))
+
+    #             color = "#4E9F3D" if voltage > 6.5 else "#ED2B2A"
+    #             serial_number = bank_test['serial_numbers'][i]
+    #             text = f'{serial_number}'
+    #             text += f"\nVoltage: {voltage} V"
+    #             text += f'\nTemp.: {temp} C'
+    #             label.setStyleSheet(f"background-color: {color}; color: white; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
+    #             label.setText(text)
+
+    #         # Update total voltage and current for the specific bank
+    #         bank_test['total_voltage_label'].setText(f'Total Voltage: {total_voltage} V\t\tTotal Current: {current} A')
+
+    #     # If this is the currently selected bank, update the displayed data
+    #     if bank_id == self.current_bank_id:
+    #         self.update_ui_for_selected_bank(bank_id)
+
+    def update_data(self, bank_number, voltages, current, temperatures):
+        bank_test = self.bank_tests[bank_number]
+
+        # Ensure the number of voltages matches the number of labels
+        total_voltage = 0
+        for i, voltage in enumerate(voltages):
+            if i < len(bank_test['labels']):
+                label = bank_test['labels'][i]
+                temp = temperatures[i] if i < len(temperatures) else 0.0
+                
+                # Voltage calculation
                 total_voltage += voltage
-                temp = float(latest_row.get("Temperature", 0))
-                current = float(latest_row.get("Current", 0))
 
+                # Update label with voltage and temperature data
+                text = f"Voltage: {voltage:.2f} V\nTemp: {temp:.2f}°C"
                 color = "#4E9F3D" if voltage > 6.5 else "#ED2B2A"
-                serial_number = bank_test['serial_numbers'][i]
-                text = f'{serial_number}'
-                text += f"\nVoltage: {voltage} V"
-                text += f'\nTemp.: {temp} C'
-                label.setStyleSheet(f"background-color: {color}; color: white; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
                 label.setText(text)
+                label.setStyleSheet(f"background-color: {color}; color: white; border: 0.5px solid black; border-radius: 5px; padding: 10px;")
 
-            # Update total voltage and current for the specific bank
-            bank_test['total_voltage_label'].setText(f'Total Voltage: {total_voltage} V\t\tTotal Current: {current} A')
+        # Update the total voltage and current for the bank
+        bank_test['total_voltage_label'].setText(f"Total Voltage: {total_voltage:.2f} V\tTotal Current: {current:.2f} A")
 
-        # If this is the currently selected bank, update the displayed data
-        if bank_id == self.current_bank_id:
-            self.update_ui_for_selected_bank(bank_id)
+
+    def start_timer(self, com_port, bank_id):
+        # Create a QTimer object
+        self.timer = QTimer(self)
+        
+        # Connect the timer's timeout signal to the read_data function
+        self.timer.timeout.connect(lambda: read_data(com_port, self.update_data, bank_id))
+        
+        # Set the timer interval to 30 seconds (30000 milliseconds)
+        self.timer.start(10000)  # 30 seconds
 
     def update_remaining_time_counter(self, bank_id):
         bank_test = self.bank_tests[bank_id]

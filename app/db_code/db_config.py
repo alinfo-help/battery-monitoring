@@ -1,6 +1,6 @@
 import configparser
 
-def read_config(file_path="F:\Alinfo\BMS\BMS_App\app\config\config.txt"):
+def read_config(file_path="F:\\Alinfo\\BMS\\BMS_App\\app\\config\\config.txt"):
     config = configparser.ConfigParser()
     config.read(file_path)
     db_config = {

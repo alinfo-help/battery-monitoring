@@ -11,7 +11,8 @@ def create_tables() :
             name VARCHAR(255) NOT NULL UNIQUE,
             number_of_cells INTEGER NOT NULL,
             description TEXT,
-            voltage DECIMAL(10, 2) NOT NULL
+            voltage DECIMAL(10, 2) NOT NULL,
+            com_port VARCHAR(12) NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS batteries (

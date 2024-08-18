@@ -3,13 +3,13 @@ from db_config import read_config
 from db_client import get_connection
 from psycopg2.extras import RealDictCursor
 
-def insert_bank(name, number_of_cells, description, voltage):
+def insert_bank(name, number_of_cells, description, voltage, com_port):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO banks (name, number_of_cells, description, voltage)
-        VALUES (%s, %s, %s, %s) RETURNING id
-    """, (name, number_of_cells, description, voltage))
+        INSERT INTO banks (name, number_of_cells, description, voltage, com_port)
+        VALUES (%s, %s, %s, %s, %s) RETURNING id
+    """, (name, number_of_cells, description, voltage, com_port))
     bank_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
@@ -27,7 +27,8 @@ def insert_banks_from_csv():
             number_of_cells = int(row['number_of_cells'])
             description = row['description']
             voltage = float(row['voltage'])
-            insert_bank(name, number_of_cells, description, voltage)
+            com_port = row['com_port']
+            insert_bank(name, number_of_cells, description, voltage, com_port)
 
 def get_all_banks():
     conn = get_connection()
